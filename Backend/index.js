@@ -19,6 +19,7 @@ const client = new MongoClient(uri, {
 });
 
 //Connection Management
+
 let db;
 
 async function connectDB() {
@@ -28,45 +29,64 @@ async function connectDB() {
   return db;
 }
 
-// ================= ROUTES =================
-
+// Routes
 app.get("/", (req, res) => res.send("Server is ready!"));
 
 // GET all
 app.get("/items", async (req, res) => {
-  const database = await connectDB();
-  const items = await database.collection("items").find().toArray();
-  res.json(items);
+  try {
+    const database = await connectDB();
+    const items = await database.collection("items").find().toArray();
+    res.json(items);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 });
 
 // POST (add)
 app.post("/items", async (req, res) => {
-  const database = await connectDB();
-  const newItem = { name: req.body.name };
-  const result = await database.collection("items").insertOne(newItem);
-  res.json(result);
+  try {
+    const database = await connectDB();
+    const newItem = { name: req.body.name };
+    const result = await database.collection("items").insertOne(newItem);
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 });
 
 // PUT (update)
 app.put("/items/:id", async (req, res) => {
-  const database = await connectDB();
-  const id = req.params.id;
-  const result = await database.collection("items").updateOne(
-    { _id: new ObjectId(id) },
-    { $set: { name: req.body.name } }
-  );
-  res.json(result);
+  try {
+    const database = await connectDB();
+    const id = req.params.id;
+    const result = await database.collection("items").updateOne(
+      { _id: new ObjectId(id) },
+      { $set: { name: req.body.name } }
+    );
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 });
 
 // DELETE
 app.delete("/items/:id", async (req, res) => {
-  const database = await connectDB();
-  const id = req.params.id;
-  const result = await database.collection("items").deleteOne({
-    _id: new ObjectId(id),
-  });
-  res.json(result);
+  try {
+    const database = await connectDB();
+    const id = req.params.id;
+    const result = await database.collection("items").deleteOne({
+      _id: new ObjectId(id),
+    });
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 });
 
-//for veracel
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
+
 module.exports = app;
