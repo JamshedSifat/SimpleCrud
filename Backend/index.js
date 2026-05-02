@@ -3,17 +3,13 @@ const cors = require("cors");
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 
 const app = express();
-const port = 5000;
 
 // middleware
 app.use(cors());
 app.use(express.json());
 
-// MongoDB URI
-const uri =
-  "mongodb+srv://CRUD:a3aEFXA8SdGkgmIQ@cluster0.cqlesxd.mongodb.net/?appName=Cluster0";
+const uri = "mongodb+srv://CRUD:a3aEFXA8SdGkgmIQ@cluster0.cqlesxd.mongodb.net/?appName=Cluster0";
 
-// client
 const client = new MongoClient(uri, {
   serverApi: {
     version: ServerApiVersion.v1,
@@ -22,68 +18,55 @@ const client = new MongoClient(uri, {
   },
 });
 
-// 🔥 Collections (like your style)
-let itemCollection;
+//Connection Management
+let db;
 
-async function run() {
-  try {
-    await client.connect();
-
-    console.log("MongoDB Connected ✅");
-
-    const db = client.db("crudDB");
-
-    // ✅ Collection create (auto create on first insert)
-    itemCollection = db.collection("items");
-
-    await client.db("admin").command({ ping: 1 });
-    console.log("MongoDB Ready 🚀");
-
-    // ================= ROUTES =================
-
-    // GET all
-    app.get("/items", async (req, res) => {
-      const data = await itemCollection.find().toArray();
-      res.json(data);
-    });
-
-    // POST (add)
-    app.post("/items", async (req, res) => {
-      const newItem = { name: req.body.name };
-      const result = await itemCollection.insertOne(newItem);
-      res.json(result);
-    });
-
-    // PUT (update)
-    app.put("/items/:id", async (req, res) => {
-      const id = req.params.id;
-
-      const result = await itemCollection.updateOne(
-        { _id: new ObjectId(id) },
-        { $set: { name: req.body.name } }
-      );
-
-      res.json(result);
-    });
-
-    // DELETE
-    app.delete("/items/:id", async (req, res) => {
-      const id = req.params.id;
-
-      const result = await itemCollection.deleteOne({
-        _id: new ObjectId(id),
-      });
-
-      res.json(result);
-    });
-  } catch (err) {
-    console.log("Error ❌", err);
-  }
+async function connectDB() {
+  if (db) return db; 
+  await client.connect();
+  db = client.db("crudDB");
+  return db;
 }
 
-run();
+// ================= ROUTES =================
 
-// server run
-app.listen(port, () => {
-  console.log(`Server running on port ${port}`);
+app.get("/", (req, res) => res.send("Server is ready!"));
+
+// GET all
+app.get("/items", async (req, res) => {
+  const database = await connectDB();
+  const items = await database.collection("items").find().toArray();
+  res.json(items);
 });
+
+// POST (add)
+app.post("/items", async (req, res) => {
+  const database = await connectDB();
+  const newItem = { name: req.body.name };
+  const result = await database.collection("items").insertOne(newItem);
+  res.json(result);
+});
+
+// PUT (update)
+app.put("/items/:id", async (req, res) => {
+  const database = await connectDB();
+  const id = req.params.id;
+  const result = await database.collection("items").updateOne(
+    { _id: new ObjectId(id) },
+    { $set: { name: req.body.name } }
+  );
+  res.json(result);
+});
+
+// DELETE
+app.delete("/items/:id", async (req, res) => {
+  const database = await connectDB();
+  const id = req.params.id;
+  const result = await database.collection("items").deleteOne({
+    _id: new ObjectId(id),
+  });
+  res.json(result);
+});
+
+//for veracel
+module.exports = app;
